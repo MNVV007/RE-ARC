@@ -126,10 +126,47 @@ app.post("/api/auth/signup", async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Enter a valid email address." });
     if (password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters." });
     if (await User.exists({ email })) return res.status(409).json({ error: "An account with that email already exists." });
-    const user = await User.create({ reArcId: await uniqueReArcId(), email, name, passwordHash: hashPassword(password), arcStartDate: new Date().toISOString().slice(0, 10) });
+
+    const user = await User.create({
+      reArcId: await uniqueReArcId(),
+      email,
+      name,
+      passwordHash: hashPassword(password),
+      arcStartDate: new Date().toISOString().slice(0, 10)
+    });
+
     await createSession(user._id, res);
     res.status(201).json(publicMe(user));
-  } catch (e) { res.status(500).json({ error: "Could not create account." }); }
+  } catch (e) {
+    // Keep the user-facing message safe, but expose the real database error in
+    // the server logs so it is visible in Render logs and can be diagnosed.
+    console.error("[RE:ARC] Signup failed:", {
+      name: e?.name,
+      code: e?.code,
+      codeName: e?.codeName,
+      message: e?.message,
+      keyPattern: e?.keyPattern,
+      keyValue: e?.keyValue
+    });
+
+    // MongoDB duplicate-key errors can happen even after the pre-check
+    // (for example if two signups race). Return a useful message.
+    if (e?.code === 11000) {
+      const duplicateField = Object.keys(e.keyPattern || {})[0];
+      if (duplicateField === "email") {
+        return res.status(409).json({ error: "An account with that email already exists." });
+      }
+      if (duplicateField === "reArcId") {
+        return res.status(409).json({ error: "RE:ARC ID collision. Please try creating the account again." });
+      }
+      return res.status(409).json({ error: "That account data already exists. Please try again." });
+    }
+
+    res.status(500).json({
+      error: "Could not create account.",
+      debug: process.env.NODE_ENV !== "production" ? String(e?.message || e) : undefined
+    });
+  }
 });
 
 app.post("/api/auth/login", async (req, res) => {
@@ -218,6 +255,16 @@ app.get("/api/invites/:reArcId", async (req, res) => {
 });
 
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
+
+mongoose.connection.on("error", err => {
+  console.error("[RE:ARC] MongoDB error:", err);
+});
+mongoose.connection.on("disconnected", () => {
+  console.warn("[RE:ARC] MongoDB disconnected.");
+});
+mongoose.connection.on("reconnected", () => {
+  console.log("[RE:ARC] MongoDB reconnected.");
+});
 
 async function start() {
   if (!MONGO_URI) console.warn("MONGODB_URI is missing. Authentication is unavailable until MongoDB is configured.");
