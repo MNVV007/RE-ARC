@@ -1,5 +1,5 @@
 const KEY = "winterArcTracker_v2";
-const API_BASE = window.WINTER_ARC_API || "/api";
+const API_BASE = window.WINTER_ARC_API || "http://localhost:3000/api";
 
 const state = JSON.parse(localStorage.getItem(KEY) || "null") || {
   user: null,
