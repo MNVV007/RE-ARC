@@ -354,7 +354,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 let toastTimer;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200);}
 
-$("#addGoalBtn").onclick=addGoal;
+$("#addGoalBtn").onclick=openGoalModal;
 $("#saveGoalBtn").onclick=addGoal;
 $("#settingsBtn").onclick=openSettings;
 $("#prevMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()-1);render()};
