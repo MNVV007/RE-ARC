@@ -79,7 +79,7 @@ function confirmToggle(){
   if(done) state.checks[id]=true;
   else delete state.checks[id];
   state.visits[key]=true;
-  state.bestStreak=calculateBestStreak();
+  state.bestStreak=Math.max(state.bestStreak,calculateStreak(),calculateBestStreak());
   save(); closeConfirm(); render();
   toast(done ? "Goal completed ✓" : "Completion removed");
   syncUser();
@@ -95,14 +95,14 @@ function deleteGoal(id){
 }
 
 function completedOn(key){ return state.goals.filter(g=>state.checks[`${g.id}_${key}`]).length; }
-function qualifies(key){ return completedOn(key)>=1; }
+function qualifies(key){ return !!state.visits[key] || completedOn(key)>=2; }
 function calculateStreak(){
   const d=new Date(); let streak=0;
   while(true){const k=dateKey(d); if(!qualifies(k)) break; streak++; d.setDate(d.getDate()-1);}
   return streak;
 }
 function calculateBestStreak(){
-  const keys=new Set();
+  const keys=new Set(Object.keys(state.visits));
   Object.keys(state.checks).forEach(id=>{const idx=id.lastIndexOf("_");if(idx>-1)keys.add(id.slice(idx+1));});
   const sorted=[...keys].sort(); if(!sorted.length)return 0;
   let best=0,run=0,prev=null;
@@ -117,7 +117,7 @@ function calculateBestStreak(){
 function markVisit(){
   const today=getTodayKey();
   if(!state.visits[today]){state.visits[today]=true;save();}
-  state.bestStreak=calculateBestStreak();
+  state.bestStreak=Math.max(state.bestStreak,calculateStreak(),calculateBestStreak());
 }
 function daysTracked(){
   const keys=[...Object.keys(state.visits),...Object.keys(state.checks).map(k=>k.slice(k.lastIndexOf("_")+1))].sort();
@@ -140,8 +140,7 @@ function renderHeader(){
   const dateText=todayDate.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
   $("#streakValue").textContent=streak;
   $("#streakDisplay").classList.toggle("streak-active", streak>0);
-  state.bestStreak=calculateBestStreak();
-  $("#bestStreak").textContent=state.bestStreak;
+  $("#bestStreak").textContent=Math.max(state.bestStreak,calculateBestStreak());
   $("#todayDone").textContent=`${done}/${state.goals.length}`;
   $("#todayDoneHero").textContent=`${done}/${state.goals.length}`;
   $("#todayHeroDate").textContent=dateText;
@@ -283,7 +282,7 @@ async function logout(){
 async function syncUser(){
   if(!state.user)return;
   try{
-    const r=await fetch(`${API_BASE}/me/progress`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:state.user.name,goals:state.goals,checks:state.checks,visits:state.visits,bestStreak:calculateBestStreak(),arcStartDate:state.arcStartDate})});
+    const r=await fetch(`${API_BASE}/me/progress`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:state.user.name,goals:state.goals,checks:state.checks,visits:state.visits,bestStreak:Math.max(state.bestStreak,calculateBestStreak()),arcStartDate:state.arcStartDate})});
     if(r.ok){const data=await r.json();state.user.name=data.name;state.user.reArcId=data.reArcId;state.user.email=data.email;save();}
   }catch{}
 }
@@ -355,7 +354,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 let toastTimer;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200);}
 
-$("#addGoalBtn").onclick=openGoalModal;
+$("#addGoalBtn").onclick=addGoal;
 $("#saveGoalBtn").onclick=addGoal;
 $("#settingsBtn").onclick=openSettings;
 $("#prevMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()-1);render()};

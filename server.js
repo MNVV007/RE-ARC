@@ -93,18 +93,35 @@ async function auth(req, res, next) {
   req.session = session;
   next();
 }
+function calculateBestStreakFromChecks(u) {
+  const pad = n => String(n).padStart(2, "0");
+  const key = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const completed = k => (Array.isArray(u.goals) ? u.goals : []).filter(g => u.checks?.[`${g.id}_${k}`]).length;
+  const qualifies = k => completed(k) >= 1;
+  const keys = new Set(Object.keys(u.checks || {}).map(id => id.slice(id.lastIndexOf("_")+1)));
+  const sorted = [...keys].sort();
+  let best = 0, run = 0, prev = null;
+  for (const k of sorted) {
+    if (!qualifies(k)) { run = 0; prev = null; continue; }
+    const d = new Date(k + "T00:00:00");
+    if (prev) { const diff = (d - prev) / 86400000; run = diff === 1 ? run + 1 : 1; } else run = 1;
+    best = Math.max(best, run); prev = d;
+  }
+  return best;
+}
+
 function currentStreak(u) {
   const pad = n => String(n).padStart(2, "0");
   const key = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const completed = k => (Array.isArray(u.goals) ? u.goals : []).filter(g => u.checks?.[`${g.id}_${k}`]).length;
-  const qualifies = k => !!u.visits?.[k] || completed(k) >= 2;
+  const qualifies = k => completed(k) >= 1;
   let streak = 0, d = new Date();
   while (qualifies(key(d))) { streak++; d.setDate(d.getDate() - 1); }
   return streak;
 }
 function publicUser(u) {
   const streak = currentStreak(u);
-  return { id: u._id.toString(), reArcId: u.reArcId, name: u.name, streak, bestStreak: Math.max(u.bestStreak || 0, streak) };
+  return { id: u._id.toString(), reArcId: u.reArcId, name: u.name, streak, bestStreak: calculateBestStreakFromChecks(u) };
 }
 function publicMe(u) {
   return { ...publicUser(u), email: u.email, goals: u.goals, checks: u.checks, visits: u.visits, arcStartDate: u.arcStartDate };
@@ -197,7 +214,7 @@ app.put("/api/me/progress", auth, async (req, res) => {
     if (Array.isArray(goals)) req.user.goals = goals;
     if (checks && typeof checks === "object") req.user.checks = checks;
     if (visits && typeof visits === "object") req.user.visits = visits;
-    if (Number.isFinite(bestStreak)) req.user.bestStreak = bestStreak;
+    req.user.bestStreak = calculateBestStreakFromChecks(req.user);
     if (typeof arcStartDate === "string") req.user.arcStartDate = arcStartDate.slice(0, 10);
     await req.user.save(); res.json(publicMe(req.user));
   } catch { res.status(500).json({ error: "Could not save progress." }); }
