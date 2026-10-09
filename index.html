@@ -15,11 +15,11 @@
   <main class="app">
     <header class="topbar">
       <div><p class="eyebrow">WINTER ARC 2026</p><h1>RE:ARC <span>❄</span></h1><p class="brand-line">Reset. Refocus. Rebuild.</p><p class="subtitle">Your Winter Arc. Your goals. Your streak.</p></div>
-      <div class="top-actions"><button id="profileBtn" class="secondary-btn">👤 Profile</button><button id="settingsBtn" class="icon-btn" title="Settings">⚙</button></div>
+      <div class="top-actions"><button id="profileBtn" class="secondary-btn">👤 Account</button><button id="settingsBtn" class="icon-btn" title="Settings">⚙</button></div>
     </header>
 
     <section class="hero-card">
-      <div class="hero-main"><div class="streak-display" id="streakDisplay" aria-label="Current streak"><strong id="streakValue">0</strong><span class="streak-flame" aria-hidden="true"><span class="smoke smoke-a"></span><span class="smoke smoke-b"></span><svg viewBox="0 0 64 76"><path d="M32 72C17.7 72 7 62.4 7 49.4c0-9.8 5.8-17.1 14.2-24.4-.3 6.8 2.8 10.9 6.9 13.7-.7-7.8 3.4-15.4 10.9-22.5 1.1 8.3 5.9 12.2 10.2 17.8 3.8 5 7.8 10.3 7.8 17.4C57 62.4 46.3 72 32 72Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M32 63c-5.8 0-10.1-4.2-10.1-9.6 0-4.2 2.1-7.4 5.5-10.5.2 4.1 2 6.4 4.7 8.1-.3-4.3 1.9-8 5.6-11.7.5 4.3 3 6.6 5.1 9.2 1.8 2.3 3.2 4.7 3.2 7.4 0 5.9-4.1 7.1-14 7.1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" opacity=".65"/></svg></span></div><div><p class="card-label">TODAY · <span id="todayHeroDate">—</span></p><h2 id="streakMessage">Your Arc continues.</h2><p class="today-progress"><strong id="todayDoneHero">0/0</strong> goals completed today</p><div class="progress-track"><span id="todayProgressBar"></span></div><p class="muted">A day counts when you complete at least 1 goal.</p></div></div>
+      <div class="hero-main"><div class="streak-display" id="streakDisplay" aria-label="Current streak"><strong id="streakValue">0</strong><span class="streak-flame" aria-hidden="true"><span class="smoke smoke-a"></span><span class="smoke smoke-b"></span><svg viewBox="0 0 64 76"><path d="M32 72C17.7 72 7 62.4 7 49.4c0-9.8 5.8-17.1 14.2-24.4-.3 6.8 2.8 10.9 6.9 13.7-.7-7.8 3.4-15.4 10.9-22.5 1.1 8.3 5.9 12.2 10.2 17.8 3.8 5 7.8 10.3 7.8 17.4C57 62.4 46.3 72 32 72Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M32 63c-5.8 0-10.1-4.2-10.1-9.6 0-4.2 2.1-7.4 5.5-10.5.2 4.1 2 6.4 4.7 8.1-.3-4.3 1.9-8 5.6-11.7.5 4.3 3 6.6 5.1 9.2 1.8 2.3 3.2 4.7 3.2 7.4 0 5.9-4.1 7.1-14 7.1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" opacity=".65"/></svg></span></div><div><p class="card-label">TODAY · <span id="todayHeroDate">—</span></p><h2 id="streakMessage">Your Arc continues.</h2><p class="today-progress"><strong id="todayDoneHero">0/0</strong> goals completed today</p><div class="progress-track"><span id="todayProgressBar"></span></div><p class="muted">A day counts when you open the app or complete at least 2 goals.</p></div></div>
       <div class="hero-stats"><div><strong id="todayDone">0/0</strong><span>today</span></div><div><strong id="overallPercent">0%</strong><span>overall</span></div><div><strong id="bestStreak">0</strong><span>best streak</span></div></div>
     </section>
 
@@ -27,7 +27,7 @@
 
     <section class="toolbar">
       <div><p class="card-label">TRACKER</p><h2 id="monthTitle">Month</h2><p id="selectedDateLabel" class="selected-date">Today</p></div>
-      <div class="toolbar-actions"><button id="prevMonth" class="secondary-btn">‹</button><button id="todayBtn" class="secondary-btn">Today</button><button id="nextMonth" class="secondary-btn">›</button><button id="addGoalBtn" class="primary-btn">＋ Add goal</button></div>
+      <div class="toolbar-actions"><button id="prevMonth" class="secondary-btn">‹</button><button id="todayBtn" class="secondary-btn">Today</button><button id="nextMonth" class="secondary-btn">›</button><button id="addGoalBtn" type="button" class="primary-btn" onclick="openGoalModal()">＋ Add goal</button></div>
     </section>
 
     <section class="notice"><span>🔒</span><div><strong>Only today is editable</strong><small>Past and future dates are locked. Tap today's cell to confirm completion.</small></div></section>
@@ -39,23 +39,35 @@
 
     <section class="insights"><div class="section-heading"><div><p class="card-label">YOUR PROGRESS</p><h2>Goal breakdown</h2></div></div><div id="goalCards" class="goal-cards"></div></section>
 
-    <section class="friends-section"><div class="section-heading friends-heading"><div><p class="card-label">ARC MATES</p><h2>Arc Mates</h2><p class="muted">Invite friends and see each other's streaks.</p></div><button id="inviteBtn" class="primary-btn">🔗 Invite Arc Mate</button></div><div id="friendCards" class="friend-cards"></div></section>
+    <section class="friends-section"><div class="section-heading friends-heading"><div><p class="card-label">ARC MATES</p><h2>Arc Mates</h2><p class="muted">Invite friends and see each other's streaks.</p></div><div class="friends-actions"><button id="addFriendBtn" class="secondary-btn">＋ Add Arc Mate</button><button id="inviteBtn" class="primary-btn">🔗 Invite Arc Mate</button></div></div><div id="friendCards" class="friend-cards"></div></section>
     <footer><div class="footer-brand"><strong>RE:ARC</strong> · Reset. Refocus. Rebuild. · Winter Arc 2026</div><div class="signature" aria-label="Signature">with love,<br><span>M.N.V.V</span></div></footer>
   </main>
+
+
+  <div id="authModal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-box auth-box">
+    <p class="card-label">WELCOME TO RE:ARC</p><h2 id="authTitle">Create your Arc</h2><p class="muted" id="authSubtitle">Create an account to save your Arc and connect with Arc Mates.</p>
+    <form id="authForm"><label id="authNameLabel">Name<input id="authName" maxlength="30" autocomplete="name" placeholder="Your name" /></label><label>Email<input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></label><label>Password<input id="authPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required /></label><button class="primary-btn full" id="authSubmit" type="submit">Create account</button></form>
+    <button class="text-btn" id="authSwitch" type="button">Already have an account? Log in</button><p id="authError" class="form-error hidden"></p>
+  </div></div>
+
+  <div id="profileModal" class="modal hidden"><div class="modal-backdrop" onclick="closeProfileModal()"></div><div class="modal-box">
+    <button class="close-btn" onclick="closeProfileModal()">×</button><p class="card-label">YOUR ACCOUNT</p><h2 id="profileName">RE:ARC</h2><p class="muted">Your RE:ARC ID</p><div class="id-copy"><strong id="profileId">—</strong><button class="secondary-btn" id="copyIdBtn">Copy</button></div><p id="profileEmail" class="muted"></p><button class="danger-btn full" id="logoutBtn">Log out</button>
+  </div></div>
+
+  <div id="addFriendModal" class="modal hidden"><div class="modal-backdrop" onclick="closeAddFriendModal()"></div><div class="modal-box">
+    <button class="close-btn" onclick="closeAddFriendModal()">×</button><p class="card-label">ARC MATES</p><h2>Add an Arc Mate</h2><p class="muted">Enter their RE:ARC ID if you cannot send the invite link.</p><label>RE:ARC ID<input id="friendIdInput" maxlength="8" placeholder="RA7K4P2" autocomplete="off" /></label><button class="primary-btn full" id="addFriendConfirmBtn">Add Arc Mate</button>
+  </div></div>
 
   <div id="goalModal" class="modal hidden"><div class="modal-backdrop" onclick="closeGoalModal()"></div><div class="modal-box"><button class="close-btn" onclick="closeGoalModal()">×</button><p class="card-label">NEW GOAL</p><h2>Add a Winter Arc goal</h2><p class="muted">Make it something you can check off each day.</p><label>Goal name<input id="goalName" maxlength="40" placeholder="e.g. Study 2 hours" /></label><label>Icon<input id="goalIcon" maxlength="4" value="🎯" /></label><button class="primary-btn full" id="saveGoalBtn">Add goal</button></div></div>
 
   <div id="confirmModal" class="modal hidden"><div class="modal-backdrop" onclick="closeConfirm()"></div><div class="modal-box confirm-box"><div class="confirm-icon">✓</div><p class="card-label">CONFIRM TODAY</p><h2 id="confirmText">Mark this goal complete?</h2><p class="muted">This action only changes today's progress.</p><div class="confirm-actions"><button class="secondary-btn" onclick="closeConfirm()">Cancel</button><button class="primary-btn" id="confirmActionBtn">Confirm</button></div></div></div>
 
-  <div id="settingsModal" class="modal hidden"><div class="modal-backdrop" onclick="closeSettings()"></div><div class="modal-box"><button class="close-btn" onclick="closeSettings()">×</button><p class="card-label">SETTINGS</p><h2>Winter Arc</h2><p class="muted">Streak rule: a calendar day counts when you complete at least 1 goal. Only today's goals can be edited.</p><button class="danger-btn full" id="resetBtn">Reset all tracker data</button></div></div>
+  <div id="settingsModal" class="modal hidden"><div class="modal-backdrop" onclick="closeSettings()"></div><div class="modal-box"><button class="close-btn" onclick="closeSettings()">×</button><p class="card-label">SETTINGS</p><h2>Winter Arc</h2><p class="muted">Streak rule: a calendar day counts when you open the app or complete at least 2 goals. Only today's goals can be edited.</p><button class="danger-btn full" id="resetBtn">Reset all tracker data</button></div></div>
+
+
+  <div id="removeFriendModal" class="modal hidden"><div class="modal-backdrop" onclick="closeRemoveFriendModal()"></div><div class="modal-box confirm-box"><div class="confirm-icon reset-confirm-icon">!</div><p class="card-label">ARC MATES</p><h2 id="removeFriendText">Remove Arc Mate?</h2><p class="muted">You will no longer see each other's Arc progress.</p><div class="confirm-actions"><button class="secondary-btn" onclick="closeRemoveFriendModal()">Cancel</button><button class="danger-btn" id="confirmRemoveFriendBtn">Remove</button></div></div></div>
 
   <div id="resetModal" class="modal hidden"><div class="modal-backdrop" onclick="closeResetModal()"></div><div class="modal-box confirm-box"><div class="confirm-icon reset-confirm-icon">!</div><p class="card-label">RESET DATA</p><h2>Reset your Arc?</h2><p class="muted">This will permanently clear your goals, check-ins, streak data and saved Arc Mates from this device.</p><div class="confirm-actions"><button class="secondary-btn" onclick="closeResetModal()">Cancel</button><button class="danger-btn" id="confirmResetBtn">Reset data</button></div></div></div>
-
-  <div id="profileModal" class="modal hidden"><div class="modal-backdrop" onclick="closeProfileModal()"></div><div class="modal-box"><button class="close-btn" onclick="closeProfileModal()">×</button><p class="card-label">YOUR PROFILE</p><h2>RE:ARC Profile</h2><p class="muted">Set your display name for your tracker and Arc Mates.</p><label>Display name<input id="profileNameInput" maxlength="30" placeholder="Winter Warrior" /></label><button class="primary-btn full" id="saveProfileBtn">Save profile</button></div></div>
-
-  <div id="deleteGoalModal" class="modal hidden"><div class="modal-backdrop" onclick="closeDeleteGoalModal()"></div><div class="modal-box confirm-box"><div class="confirm-icon reset-confirm-icon">✕</div><p class="card-label">DELETE GOAL</p><h2 id="deleteGoalTitle">Delete goal?</h2><p class="muted">This will remove the goal and all logged check-ins for it.</p><div class="confirm-actions"><button class="secondary-btn" onclick="closeDeleteGoalModal()">Cancel</button><button class="danger-btn" id="confirmDeleteGoalBtn">Delete goal</button></div></div></div>
-
-  <div id="inviteModal" class="modal hidden"><div class="modal-backdrop" onclick="closeInviteModal()"></div><div class="modal-box"><button class="close-btn" onclick="closeInviteModal()">×</button><p class="card-label">ARC MATES</p><h2>Share invite link</h2><p class="muted">Send this link to a friend to compare streaks together.</p><label>Invite link<input id="inviteUrlInput" readonly /></label><button class="primary-btn full" id="copyInviteLinkBtn">Copy link</button></div></div>
   <div id="toast" class="toast"></div>
   <script src="script.js"></script>
 </body>

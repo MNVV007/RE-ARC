@@ -1,47 +1,7 @@
 const KEY = "winterArcTracker_v2";
 const API_BASE = window.WINTER_ARC_API || "/api";
 
-// ── Compat: safe localStorage (throws in Safari Private Mode) ─────────────
-function safeGetStorage(key) {
-  try { return localStorage.getItem(key); } catch { return null; }
-}
-function safeSetStorage(key, val) {
-  try { localStorage.setItem(key, val); } catch { /* Private Mode / storage full */ }
-}
-function safeRemoveStorage(key) {
-  try { localStorage.removeItem(key); } catch { /* ignore */ }
-}
-
-// ── Compat: UUID fallback for Safari < 15.4, Firefox < 95 ────────────────
-function generateId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
-// ── Compat: fetch wrapper — always send session cookie on same-origin ─────
-function apiFetch(url, options = {}) {
-  return fetch(url, { credentials: "same-origin", ...options });
-}
-
-// ── Compat: clipboard fallback for HTTP / older browsers ──────────────────
-function copyToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text);
-  }
-  const ta = document.createElement("textarea");
-  ta.value = text; ta.style.cssText = "position:fixed;opacity:0;pointer-events:none";
-  document.body.appendChild(ta); ta.select();
-  try { document.execCommand("copy"); } catch { window.prompt("Copy your link:", text); }
-  document.body.removeChild(ta);
-  return Promise.resolve();
-}
-
-const state = JSON.parse(safeGetStorage(KEY) || "null") || {
+const state = JSON.parse(localStorage.getItem(KEY) || "null") || {
   user: null,
   goals: [],
   checks: {},
@@ -64,7 +24,7 @@ function getInitialArcStartDate(){
   return dateKey(new Date());
 }
 
-function save(){ safeSetStorage(KEY, JSON.stringify(state)); }
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
 function formatMonth(d){ return d.toLocaleString(undefined,{month:"long",year:"numeric"}); }
 function isToday(y,m,day){ return dateKey(new Date(y,m,day)) === getTodayKey(); }
@@ -96,7 +56,7 @@ function addGoal(){
   const name=$("#goalName").value.trim();
   const icon=$("#goalIcon").value.trim() || "🎯";
   if(!name) return;
-  state.goals.push({id: generateId(),name,icon,createdAt:getTodayKey()});
+  state.goals.push({id: crypto.randomUUID(),name,icon,createdAt:getTodayKey()});
   $("#goalName").value=""; $("#goalIcon").value="🎯";
   save(); closeGoalModal(); render(); toast("Goal added ❄️"); syncUser();
 }
@@ -119,7 +79,7 @@ function confirmToggle(){
   if(done) state.checks[id]=true;
   else delete state.checks[id];
   state.visits[key]=true;
-  state.bestStreak=calculateBestStreak();
+  state.bestStreak=Math.max(state.bestStreak,calculateStreak(),calculateBestStreak());
   save(); closeConfirm(); render();
   toast(done ? "Goal completed ✓" : "Completion removed");
   syncUser();
@@ -135,14 +95,14 @@ function deleteGoal(id){
 }
 
 function completedOn(key){ return state.goals.filter(g=>state.checks[`${g.id}_${key}`]).length; }
-function qualifies(key){ return completedOn(key)>=1; }
+function qualifies(key){ return !!state.visits[key] || completedOn(key)>=2; }
 function calculateStreak(){
   const d=new Date(); let streak=0;
   while(true){const k=dateKey(d); if(!qualifies(k)) break; streak++; d.setDate(d.getDate()-1);}
   return streak;
 }
 function calculateBestStreak(){
-  const keys=new Set();
+  const keys=new Set(Object.keys(state.visits));
   Object.keys(state.checks).forEach(id=>{const idx=id.lastIndexOf("_");if(idx>-1)keys.add(id.slice(idx+1));});
   const sorted=[...keys].sort(); if(!sorted.length)return 0;
   let best=0,run=0,prev=null;
@@ -157,7 +117,7 @@ function calculateBestStreak(){
 function markVisit(){
   const today=getTodayKey();
   if(!state.visits[today]){state.visits[today]=true;save();}
-  state.bestStreak=calculateBestStreak();
+  state.bestStreak=Math.max(state.bestStreak,calculateStreak(),calculateBestStreak());
 }
 function daysTracked(){
   const keys=[...Object.keys(state.visits),...Object.keys(state.checks).map(k=>k.slice(k.lastIndexOf("_")+1))].sort();
@@ -180,8 +140,7 @@ function renderHeader(){
   const dateText=todayDate.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
   $("#streakValue").textContent=streak;
   $("#streakDisplay").classList.toggle("streak-active", streak>0);
-  state.bestStreak=calculateBestStreak();
-  $("#bestStreak").textContent=state.bestStreak;
+  $("#bestStreak").textContent=Math.max(state.bestStreak,calculateBestStreak());
   $("#todayDone").textContent=`${done}/${state.goals.length}`;
   $("#todayDoneHero").textContent=`${done}/${state.goals.length}`;
   $("#todayHeroDate").textContent=dateText;
@@ -292,7 +251,7 @@ async function handleAuthSubmit(e){
   const btn=$("#authSubmit"),err=$("#authError");
   btn.disabled=true;err.classList.add("hidden");
   try{
-    const r=await apiFetch(`${API_BASE}/auth/${signup?"signup":"login"}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const r=await fetch(`${API_BASE}/auth/${signup?"signup":"login"}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||"Authentication failed.");
     state.user={id:data.id,reArcId:data.reArcId,email:data.email,name:data.name};
@@ -307,7 +266,7 @@ async function handleAuthSubmit(e){
 
 async function loadSession(){
   try{
-    const r=await apiFetch(`${API_BASE}/auth/me`);if(!r.ok)return false;
+    const r=await fetch(`${API_BASE}/auth/me`);if(!r.ok)return false;
     const data=await r.json();
     state.user={id:data.id,reArcId:data.reArcId,email:data.email,name:data.name};
     state.goals=data.goals||[];state.checks=data.checks||{};state.visits=data.visits||{};state.bestStreak=data.bestStreak||0;state.arcStartDate=data.arcStartDate||getInitialArcStartDate();
@@ -316,14 +275,14 @@ async function loadSession(){
 }
 
 async function logout(){
-  await apiFetch(`${API_BASE}/auth/logout`,{method:"POST"}).catch(()=>{});
+  await fetch(`${API_BASE}/auth/logout`,{method:"POST"}).catch(()=>{});
   state.user=null;state.goals=[];state.checks={};state.visits={};state.bestStreak=0;state.friends=[];save();closeProfileModal();render();openAuth("login");
 }
 
 async function syncUser(){
   if(!state.user)return;
   try{
-    const r=await apiFetch(`${API_BASE}/me/progress`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:state.user.name,goals:state.goals,checks:state.checks,visits:state.visits,bestStreak:calculateBestStreak(),arcStartDate:state.arcStartDate})});
+    const r=await fetch(`${API_BASE}/me/progress`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:state.user.name,goals:state.goals,checks:state.checks,visits:state.visits,bestStreak:Math.max(state.bestStreak,calculateBestStreak()),arcStartDate:state.arcStartDate})});
     if(r.ok){const data=await r.json();state.user.name=data.name;state.user.reArcId=data.reArcId;state.user.email=data.email;save();}
   }catch{}
 }
@@ -331,7 +290,7 @@ async function syncUser(){
 function inviteLink(){
   if(!state.user?.reArcId){toast("Log in first to invite an Arc Mate.");return;}
   const url=`${location.origin}${location.pathname}?friend=${encodeURIComponent(state.user.reArcId)}`;
-  copyToClipboard(url).then(()=>toast("Invite link copied 🔗")).catch(()=>window.prompt("Copy your invite link:",url));
+  navigator.clipboard?.writeText(url).then(()=>toast("Invite link copied 🔗")).catch(()=>window.prompt("Copy your invite link:",url));
 }
 
 async function addFriendById(reArcId){
@@ -340,7 +299,7 @@ async function addFriendById(reArcId){
   if(!id){toast("Enter a RE:ARC ID.");return;}
   const btn=$("#addFriendConfirmBtn");btn.disabled=true;
   try{
-    const r=await apiFetch(`${API_BASE}/friends`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reArcId:id})});
+    const r=await fetch(`${API_BASE}/friends`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reArcId:id})});
     const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not add Arc Mate.");
     await loadFriends();closeAddFriendModal();renderFriends();toast(`${data.name}'s Arc added 👊`);
   }catch(e){toast(e.message)}finally{btn.disabled=false;}
@@ -348,7 +307,7 @@ async function addFriendById(reArcId){
 
 async function loadFriends(){
   if(!state.user)return;
-  try{const r=await apiFetch(`${API_BASE}/friends`);if(!r.ok)throw new Error();state.friends=await r.json();save();}catch{}
+  try{const r=await fetch(`${API_BASE}/friends`);if(!r.ok)throw new Error();state.friends=await r.json();save();}catch{}
 }
 
 async function consumePendingInvite(){
@@ -385,7 +344,7 @@ async function confirmRemoveFriend(){
   const {id}=pendingFriendRemoval;
   const btn=$("#confirmRemoveFriendBtn");btn.disabled=true;
   try{
-    const r=await apiFetch(`${API_BASE}/friends/${encodeURIComponent(id)}`,{method:"DELETE"});
+    const r=await fetch(`${API_BASE}/friends/${encodeURIComponent(id)}`,{method:"DELETE"});
     const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not remove Arc Mate.");
     await loadFriends();closeRemoveFriendModal();renderFriends();toast("Arc Mate removed");
   }catch(e){toast(e.message)}finally{btn.disabled=false;}
@@ -395,7 +354,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 let toastTimer;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200);}
 
-$("#addGoalBtn").onclick=openGoalModal;
+$("#addGoalBtn").onclick=addGoal;
 $("#saveGoalBtn").onclick=addGoal;
 $("#settingsBtn").onclick=openSettings;
 $("#prevMonth").onclick=()=>{viewDate.setMonth(viewDate.getMonth()-1);render()};
@@ -404,7 +363,7 @@ $("#todayBtn").onclick=()=>{viewDate=new Date();viewDate.setDate(1);render()};
 function openResetModal(){ $("#resetModal").classList.remove("hidden"); }
 function closeResetModal(){ $("#resetModal").classList.add("hidden"); }
 $("#resetBtn").onclick=()=>{ closeSettings(); openResetModal(); };
-$("#confirmResetBtn").onclick=async()=>{ if(state.user) await apiFetch(`${API_BASE}/me/progress`,{method:"DELETE"}).catch(()=>{}); safeRemoveStorage(KEY); closeResetModal(); location.reload(); };
+$("#confirmResetBtn").onclick=async()=>{ if(state.user) await fetch(`${API_BASE}/me/progress`,{method:"DELETE"}).catch(()=>{}); localStorage.removeItem(KEY); closeResetModal(); location.reload(); };
 $("#confirmActionBtn").onclick=confirmToggle;
 $("#goalName").addEventListener("keydown",e=>{if(e.key==="Enter")addGoal()});
 $("#inviteBtn").onclick=inviteLink;
