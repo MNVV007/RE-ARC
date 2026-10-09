@@ -1,5 +1,6 @@
 const KEY = "winterArcTracker_v2";
 const API_BASE = window.WINTER_ARC_API || "/api";
+<<<<<<< HEAD
 
 // ── Compat: safe localStorage (throws in Safari Private Mode) ─────────────
 function safeGetStorage(key) {
@@ -22,6 +23,8 @@ function generateId() {
     return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
   });
 }
+=======
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 
 // ── Compat: fetch wrapper — always send session cookie on same-origin ─────
 function apiFetch(url, options = {}) {
@@ -64,7 +67,11 @@ function getInitialArcStartDate(){
   return dateKey(new Date());
 }
 
+<<<<<<< HEAD
 function save(){ safeSetStorage(KEY, JSON.stringify(state)); }
+=======
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
 function formatMonth(d){ return d.toLocaleString(undefined,{month:"long",year:"numeric"}); }
 function isToday(y,m,day){ return dateKey(new Date(y,m,day)) === getTodayKey(); }
@@ -96,7 +103,11 @@ function addGoal(){
   const name=$("#goalName").value.trim();
   const icon=$("#goalIcon").value.trim() || "🎯";
   if(!name) return;
+<<<<<<< HEAD
   state.goals.push({id: generateId(),name,icon,createdAt:getTodayKey()});
+=======
+  state.goals.push({id: crypto.randomUUID(),name,icon,createdAt:getTodayKey()});
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
   $("#goalName").value=""; $("#goalIcon").value="🎯";
   save(); closeGoalModal(); render(); toast("Goal added ❄️"); syncUser();
 }
@@ -292,7 +303,11 @@ async function handleAuthSubmit(e){
   const btn=$("#authSubmit"),err=$("#authError");
   btn.disabled=true;err.classList.add("hidden");
   try{
+<<<<<<< HEAD
     const r=await apiFetch(`${API_BASE}/auth/${signup?"signup":"login"}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+=======
+    const r=await fetch(`${API_BASE}/auth/${signup?"signup":"login"}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||"Authentication failed.");
     state.user={id:data.id,reArcId:data.reArcId,email:data.email,name:data.name};
@@ -307,7 +322,11 @@ async function handleAuthSubmit(e){
 
 async function loadSession(){
   try{
+<<<<<<< HEAD
     const r=await apiFetch(`${API_BASE}/auth/me`);if(!r.ok)return false;
+=======
+    const r=await fetch(`${API_BASE}/auth/me`);if(!r.ok)return false;
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     const data=await r.json();
     state.user={id:data.id,reArcId:data.reArcId,email:data.email,name:data.name};
     state.goals=data.goals||[];state.checks=data.checks||{};state.visits=data.visits||{};state.bestStreak=data.bestStreak||0;state.arcStartDate=data.arcStartDate||getInitialArcStartDate();
@@ -316,14 +335,22 @@ async function loadSession(){
 }
 
 async function logout(){
+<<<<<<< HEAD
   await apiFetch(`${API_BASE}/auth/logout`,{method:"POST"}).catch(()=>{});
+=======
+  await fetch(`${API_BASE}/auth/logout`,{method:"POST"}).catch(()=>{});
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
   state.user=null;state.goals=[];state.checks={};state.visits={};state.bestStreak=0;state.friends=[];save();closeProfileModal();render();openAuth("login");
 }
 
 async function syncUser(){
   if(!state.user)return;
   try{
+<<<<<<< HEAD
     const r=await apiFetch(`${API_BASE}/me/progress`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:state.user.name,goals:state.goals,checks:state.checks,visits:state.visits,bestStreak:calculateBestStreak(),arcStartDate:state.arcStartDate})});
+=======
+    const r=await fetch(`${API_BASE}/me/progress`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:state.user.name,goals:state.goals,checks:state.checks,visits:state.visits,bestStreak:calculateBestStreak(),arcStartDate:state.arcStartDate})});
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     if(r.ok){const data=await r.json();state.user.name=data.name;state.user.reArcId=data.reArcId;state.user.email=data.email;save();}
   }catch{}
 }
@@ -331,7 +358,11 @@ async function syncUser(){
 function inviteLink(){
   if(!state.user?.reArcId){toast("Log in first to invite an Arc Mate.");return;}
   const url=`${location.origin}${location.pathname}?friend=${encodeURIComponent(state.user.reArcId)}`;
+<<<<<<< HEAD
   copyToClipboard(url).then(()=>toast("Invite link copied 🔗")).catch(()=>window.prompt("Copy your invite link:",url));
+=======
+  navigator.clipboard?.writeText(url).then(()=>toast("Invite link copied 🔗")).catch(()=>window.prompt("Copy your invite link:",url));
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 }
 
 async function addFriendById(reArcId){
@@ -340,7 +371,11 @@ async function addFriendById(reArcId){
   if(!id){toast("Enter a RE:ARC ID.");return;}
   const btn=$("#addFriendConfirmBtn");btn.disabled=true;
   try{
+<<<<<<< HEAD
     const r=await apiFetch(`${API_BASE}/friends`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reArcId:id})});
+=======
+    const r=await fetch(`${API_BASE}/friends`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reArcId:id})});
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not add Arc Mate.");
     await loadFriends();closeAddFriendModal();renderFriends();toast(`${data.name}'s Arc added 👊`);
   }catch(e){toast(e.message)}finally{btn.disabled=false;}
@@ -348,7 +383,11 @@ async function addFriendById(reArcId){
 
 async function loadFriends(){
   if(!state.user)return;
+<<<<<<< HEAD
   try{const r=await apiFetch(`${API_BASE}/friends`);if(!r.ok)throw new Error();state.friends=await r.json();save();}catch{}
+=======
+  try{const r=await fetch(`${API_BASE}/friends`);if(!r.ok)throw new Error();state.friends=await r.json();save();}catch{}
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 }
 
 async function consumePendingInvite(){
@@ -385,7 +424,11 @@ async function confirmRemoveFriend(){
   const {id}=pendingFriendRemoval;
   const btn=$("#confirmRemoveFriendBtn");btn.disabled=true;
   try{
+<<<<<<< HEAD
     const r=await apiFetch(`${API_BASE}/friends/${encodeURIComponent(id)}`,{method:"DELETE"});
+=======
+    const r=await fetch(`${API_BASE}/friends/${encodeURIComponent(id)}`,{method:"DELETE"});
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"Could not remove Arc Mate.");
     await loadFriends();closeRemoveFriendModal();renderFriends();toast("Arc Mate removed");
   }catch(e){toast(e.message)}finally{btn.disabled=false;}
@@ -404,7 +447,11 @@ $("#todayBtn").onclick=()=>{viewDate=new Date();viewDate.setDate(1);render()};
 function openResetModal(){ $("#resetModal").classList.remove("hidden"); }
 function closeResetModal(){ $("#resetModal").classList.add("hidden"); }
 $("#resetBtn").onclick=()=>{ closeSettings(); openResetModal(); };
+<<<<<<< HEAD
 $("#confirmResetBtn").onclick=async()=>{ if(state.user) await apiFetch(`${API_BASE}/me/progress`,{method:"DELETE"}).catch(()=>{}); safeRemoveStorage(KEY); closeResetModal(); location.reload(); };
+=======
+$("#confirmResetBtn").onclick=async()=>{ if(state.user) await fetch(`${API_BASE}/me/progress`,{method:"DELETE"}).catch(()=>{}); localStorage.removeItem(KEY); closeResetModal(); location.reload(); };
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 $("#confirmActionBtn").onclick=confirmToggle;
 $("#goalName").addEventListener("keydown",e=>{if(e.key==="Enter")addGoal()});
 $("#inviteBtn").onclick=inviteLink;

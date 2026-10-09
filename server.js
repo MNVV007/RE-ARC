@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const express = require("express");
 const mongoose = require("mongoose");
+<<<<<<< HEAD
 const cors = require("cors");
 
 const app = express();
@@ -18,6 +19,10 @@ app.use(cors({
   credentials: true,
 }));
 
+=======
+
+const app = express();
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(__dirname));
@@ -82,6 +87,7 @@ function parseCookies(req) {
   }
   return out;
 }
+<<<<<<< HEAD
 function setSessionCookie(res, token, req) {
   // On Render (and most PaaS), HTTPS is terminated at a proxy which sets
   // X-Forwarded-Proto. We also respect NODE_ENV=production as a fallback.
@@ -89,15 +95,26 @@ function setSessionCookie(res, token, req) {
                   process.env.NODE_ENV === "production" ||
                   process.env.FORCE_SECURE === "true";
   const secure = isHttps ? "; Secure" : "";
+=======
+function setSessionCookie(res, token) {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
   res.setHeader("Set-Cookie", `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}${secure}`);
 }
 function clearSessionCookie(res) {
   res.setHeader("Set-Cookie", `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
 }
+<<<<<<< HEAD
 async function createSession(userId, res, req) {
   const token = crypto.randomBytes(32).toString("base64url");
   await Session.create({ tokenHash: hashToken(token), userId, expiresAt: new Date(Date.now() + SESSION_DAYS * 86400000) });
   setSessionCookie(res, token, req);
+=======
+async function createSession(userId, res) {
+  const token = crypto.randomBytes(32).toString("base64url");
+  await Session.create({ tokenHash: hashToken(token), userId, expiresAt: new Date(Date.now() + SESSION_DAYS * 86400000) });
+  setSessionCookie(res, token);
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
 }
 async function auth(req, res, next) {
   if (!dbReady()) return res.status(503).json({ error: "Database is not connected." });
@@ -170,7 +187,11 @@ app.post("/api/auth/signup", async (req, res) => {
       arcStartDate: new Date().toISOString().slice(0, 10)
     });
 
+<<<<<<< HEAD
     await createSession(user._id, res, req);
+=======
+    await createSession(user._id, res);
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     res.status(201).json(publicMe(user));
   } catch (e) {
     // Keep the user-facing message safe, but expose the real database error in
@@ -210,7 +231,11 @@ app.post("/api/auth/login", async (req, res) => {
     const email = normalizeEmail(req.body?.email), password = String(req.body?.password || "");
     const user = await User.findOne({ email });
     if (!user || !verifyPassword(password, user.passwordHash)) return res.status(401).json({ error: "Email or password is incorrect." });
+<<<<<<< HEAD
     await createSession(user._id, res, req);
+=======
+    await createSession(user._id, res);
+>>>>>>> e3fa8aeeadc92c6a1729c2967004fe8dab1185f2
     res.json(publicMe(user));
   } catch (e) { res.status(500).json({ error: "Could not log in." }); }
 });
