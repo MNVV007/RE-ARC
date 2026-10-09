@@ -50,6 +50,14 @@ function copyToClipboard(text) {
   return Promise.resolve();
 }
 
+const pad = n => String(n).padStart(2, "0");
+const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const getTodayKey = () => dateKey(new Date());
+
+function getInitialArcStartDate(){
+  return dateKey(new Date());
+}
+
 const state = JSON.parse(safeGetStorage(KEY) || "null") || {
   user: null,
   goals: [],
@@ -65,13 +73,6 @@ viewDate.setDate(1);
 let pendingAction = null;
 
 const $ = (s) => document.querySelector(s);
-const pad = n => String(n).padStart(2, "0");
-const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const getTodayKey = () => dateKey(new Date());
-
-function getInitialArcStartDate(){
-  return dateKey(new Date());
-}
 
 function save(){ safeSetStorage(KEY, JSON.stringify(state)); }
 function daysInMonth(y,m){ return new Date(y,m+1,0).getDate(); }
