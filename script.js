@@ -11,6 +11,15 @@ function safeSetStorage(key, val) {
 function safeRemoveStorage(key) {
   try { localStorage.removeItem(key); } catch { /* ignore */ }
 }
+function safeSessionGet(key) {
+  try { return sessionStorage.getItem(key); } catch { return null; }
+}
+function safeSessionSet(key, val) {
+  try { sessionStorage.setItem(key, val); } catch { /* ignore */ }
+}
+function safeSessionRemove(key) {
+  try { sessionStorage.removeItem(key); } catch { /* ignore */ }
+}
 
 // ── Compat: UUID fallback for Safari < 15.4, Firefox < 95 ────────────────
 function generateId() {
@@ -352,16 +361,16 @@ async function loadFriends(){
 }
 
 async function consumePendingInvite(){
-  const code=sessionStorage.getItem("rearcPendingFriend")||new URLSearchParams(location.search).get("friend");
+  const code=safeSessionGet("rearcPendingFriend")||new URLSearchParams(location.search).get("friend");
   if(!code||!state.user)return;
-  sessionStorage.removeItem("rearcPendingFriend");
+  safeSessionRemove("rearcPendingFriend");
   try{await addFriendById(code);history.replaceState({},"",location.pathname);}catch{}
 }
 
 async function loadFriendFromUrl(){
   const code=new URLSearchParams(location.search).get("friend");
   if(!code)return;
-  if(!state.user){sessionStorage.setItem("rearcPendingFriend",code);openAuth("login");return;}
+  if(!state.user){safeSessionSet("rearcPendingFriend",code);openAuth("login");return;}
   await addFriendById(code);history.replaceState({},"",location.pathname);
 }
 
